@@ -48,6 +48,13 @@ def color(V):
         return R, B
     return color(V)
 
+def color_shuffle(V):
+    random.seed(1)
+    random.shuffle(V)
+    R = V[:len(V)//2]
+    B = V[len(V)//2:]
+    return R, B
+
 def balance(R, B):
     red = len(R)
     blue = len(B)
@@ -81,6 +88,8 @@ def optik(A):
     else:
         return [A[0]] + optik(A[1])
 
+def Pivot(V, Ep, Em):
+    return optik(CCPivot(V, Ep, Em))
 
 V0 = list(range(1,5))
 # 4 Cluster
@@ -91,13 +100,13 @@ Em0_1 = [[1,2], [1,3], [2,3], [1,4], [2,4],[3,4]]
 Ep0_2 = [[1,2], [1,3], [2,4], [3,4]]
 Em0_2 = [[1,4], [2,3]]
 
-print("Cluster (expected: 2): ", optik(CCPivot(V0, Ep0_2, Em0_2)))
+print("Cluster (expected: 2): ", Pivot(V0, Ep0_2, Em0_2))
 #print("Costs: ", cost)
 
-R, B = color(list(range))
+R, B = color_shuffle(list(range(1,21)))
 print("Red: ", R)
 print("Blue: ", B)
-print("Fairlets incomplete: ", fairlets_naiv(R, B, Ep0_2, Em0_2))
+print("Fairlets incomplete: ", fairlets_naiv(R, B, Ep0_2))
 
 
 '''
