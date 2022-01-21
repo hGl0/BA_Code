@@ -1,5 +1,5 @@
-import random
-import numpy as np
+# import of cc-pivot 3-approx
+from rand_approx_cc import *
 
 # To Do:
 # 1) (1,1)-fairlets
@@ -7,106 +7,28 @@ import numpy as np
 # Vorverarbeitung => Bildung Fairlets
 
 
-#-------------------------------------
-# definiton
-# V=Knotenmenge, Ep = Positive, Em = Negative
-def CCPivot(V, Ep, Em):
-    i = random.choice(V)
-    C, Vn = [i], []
-    for j in V:
-        if j != i:
-            if [i, j] in Ep or [j, i] in Ep:
-                C.append(j)
-            if [i, j] in Em or [j, i] in Em:
-                Vn.append(j)
-
-# End condition, last cluster found
-    if Vn == []:
-        return C, []
-    return C, CCPivot(Vn, Ep, Em)
-
-#calculates cost of clustering, weighted with 1/0
-def cost(C, Ep, Em):
-    # ij in Ep, but i in C_k and j in C_l, k !=l
-    for i in C:
-        pass
-
-
-# assignment of color red = 1, blue = 0
-# returns set V_colored, R and B
-# 1 = rot
-# 0 = blau (grün)
-def color(V):
-    R, B = [], []
-    for k in range(len(V)):
-        i = random.choice(range(0,2))
-        if i == 1:
-            R.append(V[k])
-        else:
-            B.append(V[k])
-    if len(B) == len(R):
-        return R, B
-    return color(V)
-
-def color_shuffle(V):
-    random.seed(1)
-    random.shuffle(V)
-    R = V[:len(V)//2]
-    B = V[len(V)//2:]
-    return R, B
-
-def balance(R, B):
-    red = len(R)
-    blue = len(B)
-    balance = min(red/blue, blue/red)
-    return balance
-
-# for unweighted graphs
-# idea for weighted graphs: pick min w_lj
-def fairlets_naiv(R, B, Ep):
-    fairlets = []
-    # no match in Ep => random choice
-    R_dot = R
-    B_dot = B
-    for k in B:
-        for i in R:
-            if [i,k] in Ep or [k,i] in Ep:
-                fairlets.append([k,i])
-                R_dot.remove(i)
-                B_dot.remove(k)
-    for l in B:
-        j = random.choice(R)
-        fairlets.append([l,j])
-        B.remove(l)
-        R.remove(j)
-    return fairlets
-
-# Kosmetik
-def optik(A):
-    if A[1] == []:
-        return [A[0]]
-    else:
-        return [A[0]] + optik(A[1])
-
-def Pivot(V, Ep, Em):
-    return optik(CCPivot(V, Ep, Em))
-
 V0 = list(range(1,5))
-# 4 Cluster
-Ep0_1 = []
-Em0_1 = [[1,2], [1,3], [2,3], [1,4], [2,4],[3,4]]
 
+random.seed(42)
+R, B = color_shuffle(V0)
+print(R,B)
+
+
+# 4 Cluster
+Ep0_1 = [[1,2], [2,3]]
+Em0_1 = [[1,3], [1,4], [2,4],[3,4]]
+print(fairlets_naiv(R,B,Ep0_1))
 
 Ep0_2 = [[1,2], [1,3], [2,4], [3,4]]
 Em0_2 = [[1,4], [2,3]]
 
-print("Cluster (expected: 2): ", Pivot(V0, Ep0_2, Em0_2))
+#print("Cluster (expected: 2): ", cc_pivot_wrap(V0, Ep0_2, Em0_2))
 #print("Costs: ", cost)
 
-R, B = color_shuffle(list(range(1,21)))
-print("Red: ", R)
-print("Blue: ", B)
-print("Fairlets incomplete: ", fairlets_naiv(R, B, Ep0_2))
+#R, B = color_shuffle(list(range(1,21)))
+#print("Red: ", R)
+#print("Blue: ", B)
+#print("Fairlets incomplete: ", fairlets_naiv(R, B, Ep0_2))
 
 
 '''
