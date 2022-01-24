@@ -15,13 +15,12 @@ def cc_pivot_wrap(V, Ep, Em):
 # cc pivot algorithm
 def CCPivot(V, Ep, Em):
     i = random.choice(V)
-    print("Pivot: ", i)
     C, Vn = [i], []
     for j in V:
         if j != i:
-            if [i, j] in Ep or [j, i] in Ep:
+            if (i, j) in Ep or (j, i) in Ep:
                 C.append(j)
-            if [i, j] in Em or [j, i] in Em:
+            if (i, j) in Em or (j, i) in Em:
                 Vn.append(j)
 
 # End condition, last cluster found
