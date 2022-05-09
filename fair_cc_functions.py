@@ -37,7 +37,7 @@ def draw_graph(G, ax, node_size=300):
     # map colors of edges to drawing, accessing colors by index
 
 
-# implementation of cc pivot
+# implementation and wrapping of cc pivot
 def cc_pivot(G):
     V = list(G.nodes())
     Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==1]
@@ -52,11 +52,14 @@ def cc_pivot(G):
 # cc pivot algorithm
 def CCPivot_fct(V, Ep, Em):
     i = random.choice(V)
-    C, Vn = [i], []
+    C, Vn = [], []
+    if type(i) == tuple: C.extend(i)
+    else: C.append(i)
     for j in V:
         if j != i:
             if (i, j) in Ep or (j, i) in Ep:
-                C.append(j)
+                if type(j) == tuple: C.extend([j[0],j[1]])
+                else: C.append(j)
             if (i, j) in Em or (j, i) in Em:
                 Vn.append(j)
 
@@ -68,6 +71,7 @@ def CCPivot_fct(V, Ep, Em):
 
 # make up for more beautiful cluster representation
 def optik(A):
+
     if A[1] == []:
         return [A[0]]
     else:
@@ -77,7 +81,9 @@ def optik(A):
 # calculates cost of clustering, weighted with 1/0
 # cost of 1 for each pair with (+), but in different clusters
 # cost of 1 for each pair with (-), but in the same cluster
-def cost(C, Ep, Em):
+def cost(C, G):
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
+    Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 0]
     cost = 0
 
     # if (+) related nodes are not in one cluster

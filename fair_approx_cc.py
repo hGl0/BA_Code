@@ -7,9 +7,12 @@ random.seed(42)
 # Ep and Em for testing and debugging, two fairlet
 R = [2,4,6]
 B = [1,3,5]
-Ep0_1 = [(1, 3, 1), (1, 5, 1), (3, 5, 1),
+Ep0_1 = [(1, 5, 1), (3, 5, 1),
          (2, 4, 1), (2, 6, 1), (4, 6, 1)]
-Em0_1 = [(1, 4, 0), (2, 4, 0), (2, 3, 0), (1, 3, 0)]
+Em0_1 = [(1, 2, 0), (1, 4, 0), (1, 6, 0),
+         (3, 2, 0), (3, 4, 0), (3, 6, 0),
+         (5, 2, 0), (5, 4, 0), (5, 6, 0),
+         (1, 3, 0)]
 # Ep0_2 = [[1,2], [1,3], [2,4], [3,4]]
 # Em0_2 = [[1,4], [2,3]]
 
@@ -38,6 +41,10 @@ G_fair.add_weighted_edges_from(Ef_p)
 G_fair.add_weighted_edges_from(Ef_m)
 cluster_fair = cc_pivot(G_fair)
 print('Fair clustering: ', cluster_fair)
+costs_fair = cost(cluster_fair, G)
+#costs_unfair = cost(G_cluster, G)
+print("Costs fair:", costs_fair)
+#print("Costs unfair:", costs_unfair)
 
 draw_graph(G_fair, ax=ax2, node_size=1000)
 plt.show()
