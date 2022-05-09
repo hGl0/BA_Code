@@ -1,20 +1,56 @@
 import random
+import networkx as nx
+import matplotlib.pyplot as plt
 
 # definiton
 # V=Knotenmenge, Ep = Positive, Em = Negative
 # ungerichteter Graph => [i,j] oder [j,i],
 
+# draws graph with color mapping of nodes and edges
+# all edges in E+ are black, all edges in E- are red
+# node color decides by color attribute of node
+def draw_graph(G, ax, node_size=300):
+    # colors for edges in G
+    e_colors = ['red', 'green', 'white']
+    edge_color_map = [e_colors[edge] for edge in nx.get_edge_attributes(G, 'weight').values()]
+    # map colors of nodes to drawing
+    for node in G.nodes:
+        if G.nodes[node].get('color'):
+            # if nodes are colored
+            node_color_map = nx.get_node_attributes(G, 'color').values()
+            nx.draw(G,
+                    node_size=node_size,
+                    node_color=node_color_map,
+                    edge_color=edge_color_map,
+                    with_labels=True,
+                    ax=ax)
+        else:
+            # if color of nodes is not important
+            nx.draw(G,
+                    node_size=node_size,
+                    edge_color=edge_color_map,
+                    with_labels=True,
+                    ax=ax)
+        break
+
+
+    # map colors of edges to drawing, accessing colors by index
+
+
 # implementation of cc pivot
-def cc_pivot_wrap(V, Ep, Em):
+def cc_pivot(G):
+    V = list(G.nodes())
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==1]
+    Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==0]
     if len(V) == 0:
         print('No nodes to cluster')
         return
-    cluster = CCPivot(V, Ep, Em)
+    cluster = CCPivot_fct(V, Ep, Em)
     return optik(cluster)
 
 
 # cc pivot algorithm
-def CCPivot(V, Ep, Em):
+def CCPivot_fct(V, Ep, Em):
     i = random.choice(V)
     C, Vn = [i], []
     for j in V:
@@ -27,7 +63,7 @@ def CCPivot(V, Ep, Em):
     # End condition, last cluster found
     if Vn == []:
         return C, []
-    return C, CCPivot(Vn, Ep, Em)
+    return C, CCPivot_fct(Vn, Ep, Em)
 
 
 # make up for more beautiful cluster representation
@@ -77,9 +113,10 @@ def change_rep(C):
 
 
 # define relation between fairlets by majority vote, if equal amount of relation assign them randomly
-def fairlets_relations(fairlets, Ep, Em):
+def create_fairlet_relations(fairlets, G):
     E_fp = []
     E_fm = []
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
     for n in range(len(fairlets)):
         a = fairlets[n]
         for m in range(n+1, len(fairlets)):
@@ -99,16 +136,16 @@ def fairlets_relations(fairlets, Ep, Em):
                 cnt_p +=1
 
             if cnt_p > 2:
-                E_fp.append((a,b))
+                E_fp.append((a,b, 1))
                 continue
-            if cnt_p < 2:
-                E_fm.append((a,b))
+            if cnt_p <= 2:
+                E_fm.append((a,b, 0))
                 continue
-            if cnt_p == 2:
-                if ((a in Ep or (a[1], a[0]) in Ep) or (b in Ep  or (b[1], b[0]) in Ep)) and random.choice([0,1]):
-                    E_fp.append((a,b))
-                    continue
-                else: E_fm.append((a,b))
+            #if cnt_p == 2:
+            #    if ((a in Ep or (a[1], a[0]) in Ep) or (b in Ep  or (b[1], b[0]) in Ep)) and random.choice([0,1]):
+            #        E_fp.append((a,b))
+            #        continue
+            #    else: E_fm.append((a,b))
     return E_fp, E_fm
 
 
@@ -134,8 +171,11 @@ def balance(R, B):
 # generates naive fairlets
 # step 1) a pair with (+) relation are fairlets, when its elements have two colors
 # step 2) all remaining nodes are assigned randomly to a node with another color
-def fairlets_naive(R, B, Ep):
+def create_fairlets(G):
     fairlets = []
+    R = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n]=='red']
+    B = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n]=='blue']
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==1]
 
     # error case: balance != 1
     if len(R) != len(B):
