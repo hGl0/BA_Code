@@ -3,7 +3,7 @@ from fair_cc_functions import *
 import networkx as nx
 
 # set random seed for debugging
-random.seed(42)
+#random.seed(42)
 
 # Ep and Em for testing and debugging, two fairlet
 R = [2,4,6]
@@ -51,9 +51,25 @@ print("Costs fair:", costs_fair)
 
 draw_graph(G_fair, ax=ax2, node_size=1000)
 
-fig, ax = plt.subplots(1)
-test_graph = generate_complete_graph(8)
-draw_graph(test_graph, ax)
+fig, (ax1, ax2) = plt.subplots(2)
+test_graph = generate_complete_graph(10)
+draw_graph(test_graph, ax1)
+cluster_test_graph = cc_pivot(test_graph)
+print('Unfair cluster:', cluster_test_graph)
+cost_test_cluster = cost(cluster_test_graph, test_graph)
+print("Costs unfair: ", cost_test_cluster)
+print("E+:", len([e for e in test_graph.edges() if nx.get_edge_attributes(test_graph, 'weight')[e]==1]))
+fairlets_test = create_fairlets(test_graph)
+fair_graph = nx.Graph()
+fair_graph.add_nodes_from(fairlets_test)
+fair_p, fair_m = create_fairlet_relations(fairlets_test, test_graph)
+fair_graph.add_weighted_edges_from(fair_p)
+fair_graph.add_weighted_edges_from(fair_m)
+fair_cluster_test = cc_pivot(fair_graph)
+print('Fair cluster:', fair_cluster_test)
+fair_costs = cost(fair_cluster_test, test_graph)
+print("Costs fair: ", fair_costs)
+draw_graph(fair_graph, ax2)
 plt.show()
 
 #test_G = generate_uniform_cluster_graph(10, 3, 2)[0]
