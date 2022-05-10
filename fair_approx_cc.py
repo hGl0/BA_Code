@@ -1,4 +1,5 @@
 from fair_cc_functions import *
+#from graph_generation import *
 import networkx as nx
 
 # set random seed for debugging
@@ -16,6 +17,8 @@ Em0_1 = [(1, 2, 0), (1, 4, 0), (1, 6, 0),
 # Ep0_2 = [[1,2], [1,3], [2,4], [3,4]]
 # Em0_2 = [[1,4], [2,3]]
 
+
+
 # generate graph
 G = nx.Graph()
 G.add_nodes_from(R, color='red')
@@ -24,7 +27,7 @@ G.add_weighted_edges_from(Ep0_1)
 G.add_weighted_edges_from(Em0_1)
 
 # draw graph with colors
-fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 6))
 draw_graph(G, ax1)
 G_cluster = cc_pivot(G)
 print("Unfair clustering: ", G_cluster)
@@ -47,8 +50,17 @@ print("Costs fair:", costs_fair)
 #print("Costs unfair:", costs_unfair)
 
 draw_graph(G_fair, ax=ax2, node_size=1000)
+
+fig, ax = plt.subplots(1)
+test_graph = generate_complete_graph(8)
+draw_graph(test_graph, ax)
 plt.show()
 
+#test_G = generate_uniform_cluster_graph(10, 3, 2)[0]
+#nx.draw(test_G, with_labels=True)
+#plt.show()
+#unfair_cluster_test_G = cc_pivot(test_G)
+#print(unfair_cluster_test_G)
 #res = {u:w for u, w in nx.get_edge_attributes(G, 'weight') if w > 0}
 #print(res)
 

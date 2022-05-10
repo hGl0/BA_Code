@@ -45,16 +45,16 @@ def cc_pivot(G):
     if len(V) == 0:
         print('No nodes to cluster')
         return
-    cluster = CCPivot_fct(V, Ep, Em)
-    return optik(cluster)
+    cluster = _CCPivot_fct(V, Ep, Em)
+    return _optik(cluster)
 
 
 # cc pivot algorithm
-def CCPivot_fct(V, Ep, Em):
+def _CCPivot_fct(V, Ep, Em):
     i = random.choice(V)
-    C, Vn = [], []
-    if type(i) == tuple: C.extend(i)
-    else: C.append(i)
+    C, Vn = [i], []
+    #if type(i) == tuple: C.extend(i)
+    #else: C.append(i)
     for j in V:
         if j != i:
             if (i, j) in Ep or (j, i) in Ep:
@@ -66,39 +66,40 @@ def CCPivot_fct(V, Ep, Em):
     # End condition, last cluster found
     if Vn == []:
         return C, []
-    return C, CCPivot_fct(Vn, Ep, Em)
+    return C, _CCPivot_fct(Vn, Ep, Em)
 
 
 # make up for more beautiful cluster representation
-def optik(A):
-
+def _optik(A):
     if A[1] == []:
         return [A[0]]
     else:
-        return [A[0]] + optik(A[1])
+        return [A[0]] + _optik(A[1])
 
 
 # calculates cost of clustering, weighted with 1/0
 # cost of 1 for each pair with (+), but in different clusters
 # cost of 1 for each pair with (-), but in the same cluster
+# need to change representation of clustering if nodes are still tuples from fairlets
 def cost(C, G):
     Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
     Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 0]
     cost = 0
+    if type(C[0][0]) == tuple: C = _change_rep(C)
 
     # if (+) related nodes are not in one cluster
     for pair in Ep:
-        if get_cluster(C, pair[0]) != get_cluster(C, pair[1]):
+        if _get_cluster(C, pair[0]) != _get_cluster(C, pair[1]):
             cost += 1
     # if (-) related nodes are in the same cluster
     for pair in Em:
-        if get_cluster(C, pair[0]) == get_cluster(C, pair[1]):
+        if _get_cluster(C, pair[0]) == _get_cluster(C, pair[1]):
             cost += 1
     return cost
 
 
 # get cluster c of node n from clustering C
-def get_cluster(C, n):
+def _get_cluster(C, n):
     for c in C:
         if n in c:
             return C.index(c)
@@ -107,7 +108,7 @@ def get_cluster(C, n):
 
 
 # change representation of fair clustering C, so normal cost function can be applied
-def change_rep(C):
+def _change_rep(C):
     clustering = []
     for c in C:
         cluster = []
@@ -118,7 +119,8 @@ def change_rep(C):
     return clustering
 
 
-# define relation between fairlets by majority vote, if equal amount of relation assign them randomly
+# define relation between fairlets by majority vote, if equal amount of relation assign negative relation
+# applies for scenario 1 with (-) relations between red and blue nodes
 def create_fairlet_relations(fairlets, G):
     E_fp = []
     E_fm = []
@@ -204,3 +206,31 @@ def create_fairlets(G):
         B.remove(i)
         R.remove(j)
     return fairlets
+
+
+# creates complete graph with n nodes, which are red or blue
+# only (-) relations between different colors, other relation assigned randomly
+def generate_complete_graph(n):
+    graph = nx.complete_graph(n)
+    reds = random.sample(list(graph.nodes()), k=n // 2)
+    colored = {}
+    blues = [n for n in graph.nodes() if n not in reds]
+    for r, b in zip(reds, blues):
+        colored[r] = 'red'
+        colored[b] = 'blue'
+    nx.set_node_attributes(graph, colored, 'color')
+    weights = {}
+    for e in graph.edges():
+        if graph.nodes()[e[0]]['color'] == 'blue' and graph.nodes()[e[1]]['color'] == 'red':
+            weights[e] = 0
+        elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
+            weights[e] = 0
+        else:
+            weights[e] = random.choice([0, 1])
+    nx.set_edge_attributes(graph, weights, 'weight')
+    return graph
+
+
+# assign weight for "don't care" relation between fairlets based on local neighbourhood
+def handle_even(fairlet):
+    pass
