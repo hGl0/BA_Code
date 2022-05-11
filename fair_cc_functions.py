@@ -149,11 +149,6 @@ def create_fairlet_relations(fairlets, G):
             if cnt_p <= 2:
                 E_fm.append((a,b, 0))
                 continue
-            #if cnt_p == 2:
-            #    if ((a in Ep or (a[1], a[0]) in Ep) or (b in Ep  or (b[1], b[0]) in Ep)) and random.choice([0,1]):
-            #        E_fp.append((a,b))
-            #        continue
-            #    else: E_fm.append((a,b))
     return E_fp, E_fm
 
 
@@ -230,6 +225,28 @@ def generate_complete_graph(n):
     nx.set_edge_attributes(graph, weights, 'weight')
     return graph
 
+
+def generate_incomplete_graph(n):
+    graph = nx.complete_graph(n)
+    reds = random.sample(list(graph.nodes), k=n//2)
+    colored = {}
+    blues = [n for n in graph.nodes() if n not in reds]
+    for r,b in zip(reds, blues):
+        colored[r] = 'red'
+        colored[b] = 'blue'
+    nx.set_node_attributes(graph, colored, 'color')
+    # generate edges
+    weights = {}
+    for e in graph.edges():
+        if graph.nodes()[e[0]]['color'] == 'blue' and graph.nodes()[e[1]]['color'] == 'red':
+            weights[e] = -1
+        elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
+            weights[e] = -1
+        else:
+            weights[e] = random.choice([0,1])
+    nx.set_edge_attributes(graph, weights, 'weight')
+    graph.remove_edges_from([e for e in graph.edges() if nx.get_edge_attributes(graph, 'weight')[e]==-1])
+    return graph
 
 # assign weight for "don't care" relation between fairlets based on local neighbourhood
 def handle_even(fairlet):
