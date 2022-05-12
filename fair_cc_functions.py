@@ -2,6 +2,7 @@ import random
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
 # definiton
 # V=Knotenmenge, Ep = Positive, Em = Negative
 # ungerichteter Graph => [i,j] oder [j,i],
@@ -33,15 +34,14 @@ def draw_graph(G, ax, node_size=300):
                     ax=ax)
         break
 
-
     # map colors of edges to drawing, accessing colors by index
 
 
 # implementation and wrapping of cc pivot
 def cc_pivot(G):
     V = list(G.nodes())
-    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==1]
-    Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==0]
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
+    Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 0]
     if len(V) == 0:
         print('No nodes to cluster')
         return
@@ -53,13 +53,15 @@ def cc_pivot(G):
 def _CCPivot_fct(V, Ep, Em):
     i = random.choice(V)
     C, Vn = [i], []
-    #if type(i) == tuple: C.extend(i)
-    #else: C.append(i)
+    # if type(i) == tuple: C.extend(i)
+    # else: C.append(i)
     for j in V:
         if j != i:
             if (i, j) in Ep or (j, i) in Ep:
-                if type(j) == tuple: C.extend([j[0],j[1]])
-                else: C.append(j)
+                if type(j) == tuple:
+                    C.append((j[0], j[1]))
+                else:
+                    C.append(j)
             if (i, j) in Em or (j, i) in Em:
                 Vn.append(j)
 
@@ -127,27 +129,27 @@ def create_fairlet_relations(fairlets, G):
     Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
     for n in range(len(fairlets)):
         a = fairlets[n]
-        for m in range(n+1, len(fairlets)):
+        for m in range(n + 1, len(fairlets)):
             cnt_p = 0
             b = fairlets[m]
 
             i, j = a[0], a[1]
             k, l = b[0], b[1]
 
-            if (i,k) in Ep or (k,i) in Ep:
+            if (i, k) in Ep or (k, i) in Ep:
                 cnt_p += 1
-            if (i,l) in Ep or (l,i) in Ep:
-                cnt_p+=1
-            if (j,k) in Ep or (k,j) in Ep:
-                cnt_p+=1
-            if (j,l) in Ep or (l,j) in Ep:
-                cnt_p +=1
+            if (i, l) in Ep or (l, i) in Ep:
+                cnt_p += 1
+            if (j, k) in Ep or (k, j) in Ep:
+                cnt_p += 1
+            if (j, l) in Ep or (l, j) in Ep:
+                cnt_p += 1
 
             if cnt_p > 2:
-                E_fp.append((a,b, 1))
+                E_fp.append((a, b, 1))
                 continue
             if cnt_p <= 2:
-                E_fm.append((a,b, 0))
+                E_fm.append((a, b, 0))
                 continue
     return E_fp, E_fm
 
@@ -176,9 +178,9 @@ def balance(R, B):
 # step 2) all remaining nodes are assigned randomly to a node with another color
 def create_fairlets(G):
     fairlets = []
-    R = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n]=='red']
-    B = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n]=='blue']
-    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e]==1]
+    R = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n] == 'red']
+    B = [n for n in G.nodes() if nx.get_node_attributes(G, 'color')[n] == 'blue']
+    Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
 
     # error case: balance != 1
     if len(R) != len(B):
@@ -197,6 +199,7 @@ def create_fairlets(G):
     while len(B) > 0:
         i = random.choice(B)
         j = random.choice(R)
+        # always blue first, red second
         fairlets.append((i, j))
         B.remove(i)
         R.remove(j)
@@ -226,12 +229,15 @@ def generate_complete_graph(n):
     return graph
 
 
+# generates incomplete graph with equal amount of red and blue nodes and
+# 1) no relations between red and blue nodes
+# 2) mandatory (-) or (+) relations between same colored nodes (randomly chosen)
 def generate_incomplete_graph(n):
     graph = nx.complete_graph(n)
-    reds = random.sample(list(graph.nodes), k=n//2)
+    reds = random.sample(list(graph.nodes), k=n // 2)
     colored = {}
     blues = [n for n in graph.nodes() if n not in reds]
-    for r,b in zip(reds, blues):
+    for r, b in zip(reds, blues):
         colored[r] = 'red'
         colored[b] = 'blue'
     nx.set_node_attributes(graph, colored, 'color')
@@ -243,11 +249,53 @@ def generate_incomplete_graph(n):
         elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
             weights[e] = -1
         else:
-            weights[e] = random.choice([0,1])
+            weights[e] = random.choice([0, 1])
     nx.set_edge_attributes(graph, weights, 'weight')
-    graph.remove_edges_from([e for e in graph.edges() if nx.get_edge_attributes(graph, 'weight')[e]==-1])
+    graph.remove_edges_from([e for e in graph.edges() if nx.get_edge_attributes(graph, 'weight')[e] == -1])
     return graph
 
+
 # assign weight for "don't care" relation between fairlets based on local neighbourhood
-def handle_even(fairlet):
-    pass
+def _handle_even(e, G):
+    for adj1 in list(G.adjacency()):
+        for adj2 in list(G.adjacency()):
+            if adj1[0] == e[0] and adj2[0] == e[1] or adj1[0] == e[1] and adj2 == e[0]:
+                neighbour_fi = adj1[1]
+                neighbour_fj = adj2[1]
+                neighbour_common = [e for e in neighbour_fi if e in neighbour_fj]
+                cnt_bt_p, cnt_bt_m = 0, 0
+                for n in neighbour_common:
+                    if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 0: cnt_bt_p += 1
+                    if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_m += 1
+    if cnt_bt_p < cnt_bt_m: return 1
+    elif cnt_bt_m < cnt_bt_p: return 0
+    else: return random.choice([0, 1])
+
+
+def create_fairlet_relations_incomplete(fairlets, G):
+    Ef_p = []
+    Ef_m = []
+    Ef_n = []
+    for idx_f1 in range(len(fairlets)):
+        fi = fairlets[idx_f1]
+        for idx_f2 in range(idx_f1):
+            fj = fairlets[idx_f2]
+            if fi == fj: continue
+            # fi[0], fj[0] = relation between blue nodes
+            # fi[1], fj[1] = relation between red nodes
+            if G.edges()[(fi[0], fj[0])]['weight'] == 1 and G.edges()[(fi[1], fj[1])]['weight'] == 1:
+                Ef_p.append((fi, fj, 1))
+            elif G.edges()[(fi[0], fj[0])]['weight'] == 0 and G.edges()[(fi[1], fj[1])]['weight'] == 0:
+                Ef_m.append((fi, fj, 0))
+            else:
+                Ef_n.append((fi, fj))
+    fair_graph = nx.Graph()
+    fair_graph.add_nodes_from(fairlets)
+    fair_graph.add_weighted_edges_from(Ef_p)
+    fair_graph.add_weighted_edges_from(Ef_m)
+    for (u, v) in Ef_n:
+        if _handle_even((u, v), fair_graph):
+            Ef_p.append((u, v, 1))
+        else:
+            Ef_m.append((u, v, 0))
+    return Ef_p, Ef_m
