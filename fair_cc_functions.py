@@ -243,7 +243,6 @@ def generate_red_blue_graph(n, red, blue):
     #elif red=='lobster': red_g = graph_type[red](n/2, 0.5, 0.4)
     elif red=='bipartite':
         m = random.randrange(2,n//2-1)
-        print(m)
         red_g=graph_type[red](m, n//2-m)
     else: red_g = graph_type[red](n//2)
 
@@ -252,7 +251,6 @@ def generate_red_blue_graph(n, red, blue):
     #elif blue=='lobster': blue_g=graph_type[blue](n/2, 0.5, 0.4)
     elif blue=='bipartite':
         m = random.randrange(2,n//2-2)
-        print(m)
         blue_g=graph_type[blue](m, n//2-m)
     else: blue_g = graph_type[blue](n//2)
 
