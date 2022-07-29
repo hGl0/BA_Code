@@ -1,11 +1,5 @@
 import random
 import networkx as nx
-import matplotlib.pyplot as plt
-
-
-# definiton
-# V=Knotenmenge, Ep = Positive, Em = Negative
-# ungerichteter Graph => [i,j] oder [j,i],
 
 # draws graph with color mapping of nodes and edges
 # all edges in E+ are black, all edges in E- are red
@@ -208,6 +202,7 @@ def create_fairlets(G):
 
 # creates complete graph with n nodes, which are red or blue
 # only (-) relations between different colors, other relation assigned randomly
+# basic graph
 def generate_complete_graph(n):
     graph = nx.complete_graph(n)
     reds = random.sample(list(graph.nodes()), k=n // 2)
@@ -228,10 +223,66 @@ def generate_complete_graph(n):
     nx.set_edge_attributes(graph, weights, 'weight')
     return graph
 
+def generate_red_blue_graph(n, red, blue):
+    if n % 2 or n < 2: return -1
+    graph_type={
+        # sparse graphs
+        'star': nx.star_graph,                      # n+1 nodes
+        'bal_bin_tree': nx.full_rary_tree,          # n nodes, extra check for r
+        'circle': nx.cycle_graph,                   # n nodes
+        'lobster': nx.random_lobster,               # n nodes, extra check for p1, p2
+        # dense graphs
+        'clique': nx.complete_graph,                # n nodes
+        'bipartite': nx.complete_bipartite_graph,   # n nodes, extra check for n1, n2
+        'hypercube': nx.hypercube_graph,            # 2^n nodes, dimension n
+    }
+
+    # check for extra parameters, attention to amount of nodes
+    if red=='star': red_g = graph_type[red](n//2-1)
+    elif red=='bal_bin_tree': red_g=graph_type[red](2, n//2)
+    #elif red=='lobster': red_g = graph_type[red](n/2, 0.5, 0.4)
+    elif red=='bipartite':
+        m = random.randrange(2,n//2-1)
+        print(m)
+        red_g=graph_type[red](m, n//2-m)
+    else: red_g = graph_type[red](n//2)
+
+    if blue=='star': blue_g = graph_type[blue](n//2-1)
+    elif blue=='bal_bin_tree': blue_g=graph_type[blue](2, n//2)
+    #elif blue=='lobster': blue_g=graph_type[blue](n/2, 0.5, 0.4)
+    elif blue=='bipartite':
+        m = random.randrange(2,n//2-2)
+        print(m)
+        blue_g=graph_type[blue](m, n//2-m)
+    else: blue_g = graph_type[blue](n//2)
+
+    # rename nodes of red_g to be disjunct to blue_g
+    red_g = nx.relabel_nodes(red_g, lambda x: x+n//2)
+    # assign colors
+    red_g.add_nodes_from(red_g.nodes, color='red')
+    blue_g.add_nodes_from(blue_g.nodes, color='blue')
+
+    # generate graph composed of blue_g and red_g
+    graph = nx.compose(blue_g, red_g)
+    graph.add_edges_from(graph.edges, weight=1)
+
+    comp_graph = nx.complement(graph)
+    graph.add_edges_from(comp_graph.edges, weight=0)
+
+    for e in graph.edges():
+        if graph.nodes()[e[0]]['color'] == 'blue' and graph.nodes()[e[1]]['color'] == 'red':
+            graph.remove_edge(*e)
+        elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
+            graph.remove_edge(*e)
+    return graph
+
+
+
 
 # generates incomplete graph with equal amount of red and blue nodes and
 # 1) no relations between red and blue nodes
 # 2) mandatory (-) or (+) relations between same colored nodes (randomly chosen)
+# basic graph, red and blue subgraphs have approximately same density/structure
 def generate_incomplete_graph(n):
     graph = nx.complete_graph(n)
     reds = random.sample(list(graph.nodes), k=n // 2)
@@ -257,16 +308,11 @@ def generate_incomplete_graph(n):
 
 # assign weight for "don't care" relation between fairlets based on local neighbourhood
 def _handle_even(e, G):
-    for adj1 in list(G.adjacency()):
-        for adj2 in list(G.adjacency()):
-            if adj1[0] == e[0] and adj2[0] == e[1] or adj1[0] == e[1] and adj2 == e[0]:
-                neighbour_fi = adj1[1]
-                neighbour_fj = adj2[1]
-                neighbour_common = [e for e in neighbour_fi if e in neighbour_fj]
-                cnt_bt_p, cnt_bt_m = 0, 0
-                for n in neighbour_common:
-                    if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 0: cnt_bt_p += 1
-                    if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_m += 1
+    neighbour_common = nx.common_neighbors(G,e[0],e[1])
+    cnt_bt_p, cnt_bt_m = 0, 0
+    for n in neighbour_common:
+        if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 0: cnt_bt_p += 1
+        if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_m += 1
     if cnt_bt_p < cnt_bt_m: return 1
     elif cnt_bt_m < cnt_bt_p: return 0
     else: return random.choice([0, 1])
