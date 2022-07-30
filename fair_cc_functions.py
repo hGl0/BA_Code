@@ -230,17 +230,16 @@ def generate_red_blue_graph(n, red, blue):
         'star': nx.star_graph,                      # n+1 nodes
         'bal_bin_tree': nx.full_rary_tree,          # n nodes, extra check for r
         'circle': nx.cycle_graph,                   # n nodes
-        'lobster': nx.random_lobster,               # n nodes, extra check for p1, p2
         # dense graphs
         'clique': nx.complete_graph,                # n nodes
         'bipartite': nx.complete_bipartite_graph,   # n nodes, extra check for n1, n2
         'hypercube': nx.hypercube_graph,            # 2^n nodes, dimension n
+        'is': nx.empty_graph,
     }
 
     # check for extra parameters, attention to amount of nodes
     if red=='star': red_g = graph_type[red](n//2-1)
     elif red=='bal_bin_tree': red_g=graph_type[red](2, n//2)
-    #elif red=='lobster': red_g = graph_type[red](n/2, 0.5, 0.4)
     elif red=='bipartite':
         m = random.randrange(2,n//2-1)
         red_g=graph_type[red](m, n//2-m)
@@ -248,7 +247,6 @@ def generate_red_blue_graph(n, red, blue):
 
     if blue=='star': blue_g = graph_type[blue](n//2-1)
     elif blue=='bal_bin_tree': blue_g=graph_type[blue](2, n//2)
-    #elif blue=='lobster': blue_g=graph_type[blue](n/2, 0.5, 0.4)
     elif blue=='bipartite':
         m = random.randrange(2,n//2-2)
         blue_g=graph_type[blue](m, n//2-m)
