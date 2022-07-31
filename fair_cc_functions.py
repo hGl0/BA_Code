@@ -4,6 +4,9 @@ import networkx as nx
 # draws graph with color mapping of nodes and edges
 # all edges in E+ are black, all edges in E- are red
 # node color decides by color attribute of node
+import numpy as np
+
+
 def draw_graph(G, ax, node_size=300):
     # colors for edges in G
     e_colors = ['red', 'green', 'white']
@@ -156,14 +159,23 @@ def color(V):
     return R, B
 
 
-# calculate balance between Red and Blue (optimal: 1)
-def balance(R, B):
+def get_color(G,v):
+    return G.nodes[v]['color']
+
+# calculate balance of cluster of G
+def balance(C, G):
+    all_balances = []
+    for c in C:
+        red = 0
+        blue = 0
+        for v in c:
+            if get_color(G,v) == 'red': red += 1
+            if get_color(G,v) == 'blue': blue+=1
+        all_balances.append(min(red/blue, blue/red))
     # avoid division by 0
-    if len(R) == 0 or len(B) == 0:
-        return -1
-    red = len(R)
-    blue = len(B)
-    balance = min(red / blue, blue / red)
+    if red == 0 or blue == 0:
+        return 0
+    balance = min(all_balances)
     return balance
 
 
@@ -223,37 +235,54 @@ def generate_complete_graph(n):
     nx.set_edge_attributes(graph, weights, 'weight')
     return graph
 
+
 def generate_red_blue_graph(n, red, blue):
     if n % 2 or n < 2: return -1
-    graph_type={
+    graph_type = {
         # sparse graphs
-        'star': nx.star_graph,                      # n+1 nodes
-        'bal_bin_tree': nx.full_rary_tree,          # n nodes, extra check for r
-        'circle': nx.cycle_graph,                   # n nodes
+        'star': nx.star_graph,  # n+1 nodes
+        'bal_bin_tree': nx.full_rary_tree,  # n nodes, extra check for r
+        'circle': nx.cycle_graph,  # n nodes
         # dense graphs
-        'clique': nx.complete_graph,                # n nodes
-        'bipartite': nx.complete_bipartite_graph,   # n nodes, extra check for n1, n2
-        'hypercube': nx.hypercube_graph,            # 2^n nodes, dimension n
+        'clique': nx.complete_graph,  # n nodes
+        'bipartite': nx.complete_bipartite_graph,  # n nodes, extra check for n1, n2
         'is': nx.empty_graph,
+        '3partite': nx.complete_multipartite_graph,
     }
 
     # check for extra parameters, attention to amount of nodes
-    if red=='star': red_g = graph_type[red](n//2-1)
-    elif red=='bal_bin_tree': red_g=graph_type[red](2, n//2)
-    elif red=='bipartite':
-        m = random.randrange(2,n//2-1)
-        red_g=graph_type[red](m, n//2-m)
-    else: red_g = graph_type[red](n//2)
+    if red == 'star':
+        red_g = graph_type[red](n // 2 - 1)
+    elif red == 'bal_bin_tree':
+        red_g = graph_type[red](2, n // 2)
+    elif red == 'bipartite':
+        m = random.randrange(2, n // 2 - 2)
+        red_g = graph_type[red](m, n // 2 - m)
+    elif red == '3partite':
+        i = random.randrange(1, n // 6 + 1)
+        j = random.randrange(1, i + 1)
+        k = n // 2 - i - j
+        red_g = graph_type[red](i, j, k)
+    else:
+        red_g = graph_type[red](n // 2)
 
-    if blue=='star': blue_g = graph_type[blue](n//2-1)
-    elif blue=='bal_bin_tree': blue_g=graph_type[blue](2, n//2)
-    elif blue=='bipartite':
-        m = random.randrange(2,n//2-2)
-        blue_g=graph_type[blue](m, n//2-m)
-    else: blue_g = graph_type[blue](n//2)
+    if blue == 'star':
+        blue_g = graph_type[blue](n // 2 - 1)
+    elif blue == 'bal_bin_tree':
+        blue_g = graph_type[blue](2, n // 2)
+    elif blue == 'bipartite':
+        m = random.randrange(2, n // 2 - 2)
+        blue_g = graph_type[blue](m, n // 2 - m)
+    elif blue == '3partite':
+        i = random.randrange(1, n // 6+1)
+        j = random.randrange(1, i+1)
+        k =n // 2 - i - j
+        blue_g = graph_type[blue](i, j, k)
+    else:
+        blue_g = graph_type[blue](n // 2)
 
     # rename nodes of red_g to be disjunct to blue_g
-    red_g = nx.relabel_nodes(red_g, lambda x: x+n//2)
+    red_g = nx.relabel_nodes(red_g, lambda x: x + n // 2)
     # assign colors
     red_g.add_nodes_from(red_g.nodes, color='red')
     blue_g.add_nodes_from(blue_g.nodes, color='blue')
@@ -271,8 +300,6 @@ def generate_red_blue_graph(n, red, blue):
         elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
             graph.remove_edge(*e)
     return graph
-
-
 
 
 # generates incomplete graph with equal amount of red and blue nodes and
@@ -304,14 +331,17 @@ def generate_incomplete_graph(n):
 
 # assign weight for "don't care" relation between fairlets based on local neighbourhood
 def _handle_even(e, G):
-    neighbour_common = nx.common_neighbors(G,e[0],e[1])
+    neighbour_common = nx.common_neighbors(G, e[0], e[1])
     cnt_bt_p, cnt_bt_m = 0, 0
     for n in neighbour_common:
         if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 0: cnt_bt_p += 1
         if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_m += 1
-    if cnt_bt_p < cnt_bt_m: return 1
-    elif cnt_bt_m < cnt_bt_p: return 0
-    else: return random.choice([0, 1])
+    if cnt_bt_p < cnt_bt_m:
+        return 1
+    elif cnt_bt_m < cnt_bt_p:
+        return 0
+    else:
+        return random.choice([0, 1])
 
 
 def create_fairlet_relations_incomplete(fairlets, G):
