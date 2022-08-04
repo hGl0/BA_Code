@@ -162,7 +162,7 @@ def color(V):
 def get_color(G,v):
     return G.nodes[v]['color']
 
-# calculate balance of cluster of G
+# calculate balance of clustering of G
 def balance(C, G):
     all_balances = []
     for c in C:
@@ -299,7 +299,7 @@ def generate_red_blue_graph(n, red, blue):
             graph.remove_edge(*e)
         elif graph.nodes()[e[1]]['color'] == 'blue' and graph.nodes()[e[0]]['color'] == 'red':
             graph.remove_edge(*e)
-    return graph
+    return graph, red_g, blue_g
 
 
 # generates incomplete graph with equal amount of red and blue nodes and
