@@ -236,7 +236,7 @@ def generate_complete_graph(n):
     return graph
 
 
-def generate_red_blue_graph(n, red, blue):
+def generate_red_blue_graph(n, red, blue, p1=0.75, p2=0.75):
     if n % 2 or n < 2: return -1
     graph_type = {
         # sparse graphs
@@ -248,6 +248,7 @@ def generate_red_blue_graph(n, red, blue):
         'bipartite': nx.complete_bipartite_graph,  # n nodes, extra check for n1, n2
         'is': nx.empty_graph,
         '3partite': nx.complete_multipartite_graph,
+        'erdos_renyi' : nx.erdos_renyi_graph,
     }
 
     # check for extra parameters, attention to amount of nodes
@@ -263,6 +264,8 @@ def generate_red_blue_graph(n, red, blue):
         j = random.randrange(1, i + 1)
         k = n // 2 - i - j
         red_g = graph_type[red](i, j, k)
+    elif red == 'erdos_renyi':
+        red_g = graph_type[red](n//2, p1)
     else:
         red_g = graph_type[red](n // 2)
 
@@ -278,6 +281,8 @@ def generate_red_blue_graph(n, red, blue):
         j = random.randrange(1, i+1)
         k =n // 2 - i - j
         blue_g = graph_type[blue](i, j, k)
+    elif blue == 'erdos_renyi':
+        blue_g = graph_type[blue](n//2, p2)
     else:
         blue_g = graph_type[blue](n // 2)
 
