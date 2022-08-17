@@ -340,12 +340,19 @@ def _handle_even(e, G):
     cnt_bt_p, cnt_bt_m = 0, 0
     for n in neighbour_common:
         if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 0: cnt_bt_p += 1
+        if G.edges()[(e[0], n)]['weight'] == 0 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_p += 1
         if G.edges()[(e[0], n)]['weight'] == 1 and G.edges()[(e[1], n)]['weight'] == 1: cnt_bt_m += 1
     if cnt_bt_p < cnt_bt_m:
+        # print('handle even assigned 1 for: ', e)
+        # print('with c+ =', cnt_bt_p, 'and c- = ', cnt_bt_m)
         return 1
     elif cnt_bt_m < cnt_bt_p:
+        # print('handle even assigned 0 for: ',e)
+        # print('with c+ =', cnt_bt_p, 'and c- = ', cnt_bt_m)
         return 0
     else:
+        # print('handle even assigned randomly for: ', e)
+        # print('with c+ =', cnt_bt_p, 'and c- = ', cnt_bt_m)
         return random.choice([0, 1])
 
 
@@ -375,4 +382,6 @@ def create_fairlet_relations_incomplete(fairlets, G):
             Ef_p.append((u, v, 1))
         else:
             Ef_m.append((u, v, 0))
+        fair_graph.add_weighted_edges_from(Ef_p)
+        fair_graph.add_weighted_edges_from(Ef_m)
     return Ef_p, Ef_m
