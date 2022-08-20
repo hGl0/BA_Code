@@ -355,7 +355,7 @@ def _handle_even(e, G):
         # print('with c+ =', cnt_bt_p, 'and c- = ', cnt_bt_m)
         return random.choice([0, 1])
 
-
+# takes set of fairlets and graph without fairlets as input
 def create_fairlet_relations_incomplete(fairlets, G):
     Ef_p = []
     Ef_m = []
