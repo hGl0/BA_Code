@@ -83,18 +83,18 @@ def _optik(A):
 def cost(C, G):
     Ep = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 1]
     Em = [e for e in G.edges() if nx.get_edge_attributes(G, 'weight')[e] == 0]
-    cost = 0
+    costs = 0
     if type(C[0][0]) == tuple: C = _change_rep(C)
 
     # if (+) related nodes are not in one cluster
     for pair in Ep:
         if _get_cluster(C, pair[0]) != _get_cluster(C, pair[1]):
-            cost += 1
+            costs += 1
     # if (-) related nodes are in the same cluster
     for pair in Em:
         if _get_cluster(C, pair[0]) == _get_cluster(C, pair[1]):
-            cost += 1
-    return cost
+            costs += 1
+    return costs
 
 
 # get cluster c of node n from clustering C
